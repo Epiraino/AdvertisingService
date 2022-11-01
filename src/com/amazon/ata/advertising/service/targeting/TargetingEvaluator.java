@@ -5,6 +5,8 @@ import com.amazon.ata.advertising.service.targeting.predicate.TargetingPredicate
 import com.amazon.ata.advertising.service.targeting.predicate.TargetingPredicateResult;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Evaluates TargetingPredicates for a given RequestContext.
@@ -31,13 +33,29 @@ public class TargetingEvaluator {
     public TargetingPredicateResult evaluate(TargetingGroup targetingGroup) {
         List<TargetingPredicate> targetingPredicates = targetingGroup.getTargetingPredicates();
         boolean allTruePredicates = true;
-        for (TargetingPredicate predicate : targetingPredicates) {
-            TargetingPredicateResult predicateResult = predicate.evaluate(requestContext);
-            if (!predicateResult.isTrue()) {
-                allTruePredicates = false;
-                break;
-            }
+        /***************************************************************************************************************
+         * This is the Section we need to change
+         *
+         * predicate.evaluate(requestContext)
+         * if is false change all true predicates to false
+         **************************************************************************************************************/
+        List<TargetingPredicate> results = targetingPredicates.stream()
+                .filter(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue())
+                .collect(Collectors.toList());
+        if (results != null){
+            allTruePredicates = false;
         }
+
+//        for (TargetingPredicate predicate : targetingPredicates) {
+//            TargetingPredicateResult predicateResult = predicate.evaluate(requestContext);
+//            if (!predicateResult.isTrue()) {
+//                allTruePredicates = false;
+//                break;
+//            }
+//        }
+        /***************************************************************************************************************
+         * This is the Section we need to change
+         **************************************************************************************************************/
 
         return allTruePredicates ? TargetingPredicateResult.TRUE :
                                    TargetingPredicateResult.FALSE;
