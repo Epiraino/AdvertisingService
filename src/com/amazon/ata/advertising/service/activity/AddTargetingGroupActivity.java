@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 /**
@@ -43,7 +44,11 @@ public class AddTargetingGroupActivity {
      * @param request The service request
      * @return The service response
      */
+
+
+
     public AddTargetingGroupResponse addTargetingGroup(AddTargetingGroupRequest request) {
+
         String contentId = request.getContentId();
         List<com.amazon.ata.advertising.service.model.TargetingPredicate> requestedTargetingPredicates =
             request.getTargetingPredicates();
@@ -51,13 +56,27 @@ public class AddTargetingGroupActivity {
             requestedTargetingPredicates,
             contentId));
 
+
         List<TargetingPredicate> targetingPredicates = new ArrayList<>();
+
+
         if (requestedTargetingPredicates != null) {
-            for (com.amazon.ata.advertising.service.model.TargetingPredicate targetingPredicate :
-                requestedTargetingPredicates) {
-                TargetingPredicate predicate = TargetingPredicateTranslator.fromCoral(targetingPredicate);
-                targetingPredicates.add(predicate);
-            }
+            /***************************************************************************************************************
+             *  this is the code we need to convert to a Stream
+             **************************************************************************************************************/
+                    targetingPredicates = requestedTargetingPredicates.stream()
+                    .map(targetingPredicate -> TargetingPredicateTranslator.fromCoral(targetingPredicate))
+                    .collect(Collectors.toList());
+
+
+//            for (com.amazon.ata.advertising.service.model.TargetingPredicate targetingPredicate :
+//                requestedTargetingPredicates) {
+//                TargetingPredicate predicate = TargetingPredicateTranslator.fromCoral(targetingPredicate);
+//                targetingPredicates.add(predicate);
+//            }
+            /***************************************************************************************************************
+             *  this is the code we need to convert to a Stream
+             **************************************************************************************************************/
         }
 
         TargetingGroup targetingGroup = targetingGroupDao.create(contentId, targetingPredicates);

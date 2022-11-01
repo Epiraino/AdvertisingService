@@ -39,12 +39,10 @@ public class TargetingEvaluator {
          * predicate.evaluate(requestContext)
          * if is false change all true predicates to false
          **************************************************************************************************************/
-        List<TargetingPredicate> results = targetingPredicates.stream()
-                .filter(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue())
-                .collect(Collectors.toList());
-        if (results != null){
-            allTruePredicates = false;
-        }
+        allTruePredicates = targetingPredicates.stream()
+                .allMatch(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue());
+
+
 
 //        for (TargetingPredicate predicate : targetingPredicates) {
 //            TargetingPredicateResult predicateResult = predicate.evaluate(requestContext);
