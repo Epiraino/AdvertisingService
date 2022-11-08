@@ -43,7 +43,7 @@ public class TargetingEvaluator {
                 .allMatch(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue());
 
 
-
+// OUTDATED
 //        for (TargetingPredicate predicate : targetingPredicates) {
 //            TargetingPredicateResult predicateResult = predicate.evaluate(requestContext);
 //            if (!predicateResult.isTrue()) {

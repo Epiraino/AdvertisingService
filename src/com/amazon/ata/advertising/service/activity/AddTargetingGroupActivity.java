@@ -68,7 +68,7 @@ public class AddTargetingGroupActivity {
                     .map(targetingPredicate -> TargetingPredicateTranslator.fromCoral(targetingPredicate))
                     .collect(Collectors.toList());
 
-
+//  OUTDATED
 //            for (com.amazon.ata.advertising.service.model.TargetingPredicate targetingPredicate :
 //                requestedTargetingPredicates) {
 //                TargetingPredicate predicate = TargetingPredicateTranslator.fromCoral(targetingPredicate);

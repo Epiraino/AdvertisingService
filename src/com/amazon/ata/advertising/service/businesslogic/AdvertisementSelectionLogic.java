@@ -11,6 +11,7 @@ import com.amazon.ata.advertising.service.targeting.TargetingGroup;
 
 import com.amazon.ata.advertising.service.targeting.predicate.TargetingPredicateResult;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,34 +70,27 @@ public class AdvertisementSelectionLogic {
         if (StringUtils.isEmpty(marketplaceId)) {
             LOG.warn("MarketplaceId cannot be null or empty. Returning empty ad.");
         } else {
-              final List<AdvertisementContent> contents = contentDao.get(marketplaceId);
-            /***********************************************************************************************************
-             * this is the section of code we need to edit
-             * for each advertisement content get targeting group list
-             * evaluate to run the targeting predicates
-             ***********************************************************************************************************/
-            requestContext = new RequestContext(customerId, marketplaceId);
-            targetingEvaluator = new TargetingEvaluator(requestContext);
+            final RequestContext requestContext = new RequestContext(customerId, marketplaceId);
+            final TargetingEvaluator evaluator = new TargetingEvaluator(requestContext);
+            final Comparator<TargetingGroup> sortByCTR = Comparator.comparingDouble(TargetingGroup::getClickThroughRate)
+                    .reversed();
+            final SortedMap<TargetingGroup, AdvertisementContent> eligibleAdvertisements = new TreeMap<>(sortByCTR);
+            final List<AdvertisementContent> contents = contentDao.get(marketplaceId);
 
-
-
-            if (CollectionUtils.isNotEmpty(contents)) {
-
-                List<AdvertisementContent> targets = contents.stream()
-                        .peek(advertisementContent -> targetingGroupDao.get(advertisementContent.getContentId())
-                                .removeIf(targetingGroup -> targetingEvaluator.evaluate(targetingGroup).isTrue() != true))
-                        .findAny()
-                        .stream()
-                        .collect(Collectors.toList());
-
-                AdvertisementContent randomAdvertisementContent = targets.get(random.nextInt(targets.size()));
-
-                generatedAdvertisement = new GeneratedAdvertisement(randomAdvertisementContent);
+            for (AdvertisementContent content : contents) {
+                List<TargetingGroup> targetingGroups = targetingGroupDao.get(content.getContentId());
+                targetingGroups.stream()
+                        .sorted(sortByCTR)
+                        .filter(targetingGroup -> evaluator.evaluate(targetingGroup).isTrue())
+                        .findFirst()
+                        .ifPresent(targetingGroup -> eligibleAdvertisements.put(targetingGroup, content));
             }
-            /***********************************************************************************************************
-             * this is the section of code we need to edit
-             **********************************************************************************************************/
 
+            if (MapUtils.isNotEmpty(eligibleAdvertisements)) {
+                final TargetingGroup highestCTRGroup = eligibleAdvertisements.firstKey();
+                final AdvertisementContent contentToRender = eligibleAdvertisements.get(highestCTRGroup);
+                generatedAdvertisement = new GeneratedAdvertisement(contentToRender);
+            }
         }
 
         return generatedAdvertisement;
