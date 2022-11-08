@@ -1,17 +1,24 @@
 package com.amazon.ata.advertising.service.businesslogic;
 
 import com.amazon.ata.advertising.service.dao.ReadableDao;
+import com.amazon.ata.advertising.service.dao.TargetingGroupDao;
 import com.amazon.ata.advertising.service.model.AdvertisementContent;
 import com.amazon.ata.advertising.service.model.EmptyGeneratedAdvertisement;
 import com.amazon.ata.advertising.service.model.GeneratedAdvertisement;
+import com.amazon.ata.advertising.service.model.RequestContext;
+import com.amazon.ata.advertising.service.targeting.TargetingEvaluator;
 import com.amazon.ata.advertising.service.targeting.TargetingGroup;
 
+import com.amazon.ata.advertising.service.targeting.predicate.TargetingPredicateResult;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.annotation.Target;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /**
@@ -23,7 +30,9 @@ public class AdvertisementSelectionLogic {
 
     private final ReadableDao<String, List<AdvertisementContent>> contentDao;
     private final ReadableDao<String, List<TargetingGroup>> targetingGroupDao;
+    private TargetingEvaluator targetingEvaluator;
     private Random random = new Random();
+    private RequestContext requestContext;
 
     /**
      * Constructor for AdvertisementSelectionLogic.
@@ -60,12 +69,33 @@ public class AdvertisementSelectionLogic {
         if (StringUtils.isEmpty(marketplaceId)) {
             LOG.warn("MarketplaceId cannot be null or empty. Returning empty ad.");
         } else {
-            final List<AdvertisementContent> contents = contentDao.get(marketplaceId);
+              final List<AdvertisementContent> contents = contentDao.get(marketplaceId);
+            /***********************************************************************************************************
+             * this is the section of code we need to edit
+             * for each advertisement content get targeting group list
+             * evaluate to run the targeting predicates
+             ***********************************************************************************************************/
+            requestContext = new RequestContext(customerId, marketplaceId);
+            targetingEvaluator = new TargetingEvaluator(requestContext);
+
+
 
             if (CollectionUtils.isNotEmpty(contents)) {
-                AdvertisementContent randomAdvertisementContent = contents.get(random.nextInt(contents.size()));
+
+                List<AdvertisementContent> targets = contents.stream()
+                        .peek(advertisementContent -> targetingGroupDao.get(advertisementContent.getContentId())
+                                .removeIf(targetingGroup -> targetingEvaluator.evaluate(targetingGroup).isTrue() != true))
+                        .findAny()
+                        .stream()
+                        .collect(Collectors.toList());
+
+                AdvertisementContent randomAdvertisementContent = targets.get(random.nextInt(targets.size()));
+
                 generatedAdvertisement = new GeneratedAdvertisement(randomAdvertisementContent);
             }
+            /***********************************************************************************************************
+             * this is the section of code we need to edit
+             **********************************************************************************************************/
 
         }
 

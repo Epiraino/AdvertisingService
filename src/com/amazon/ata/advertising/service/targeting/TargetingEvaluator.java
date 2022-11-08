@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * Evaluates TargetingPredicates for a given RequestContext.
  */
 public class TargetingEvaluator {
-    public static final boolean IMPLEMENTED_STREAMS = false;
+    public static final boolean IMPLEMENTED_STREAMS = true;
     public static final boolean IMPLEMENTED_CONCURRENCY = false;
     private final RequestContext requestContext;
 
