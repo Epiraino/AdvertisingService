@@ -13,7 +13,7 @@ import java.util.stream.Stream;
  */
 public class TargetingEvaluator {
     public static final boolean IMPLEMENTED_STREAMS = true;
-    public static final boolean IMPLEMENTED_CONCURRENCY = false;
+    public static final boolean IMPLEMENTED_CONCURRENCY = true;
     private final RequestContext requestContext;
 
     /**
@@ -34,11 +34,13 @@ public class TargetingEvaluator {
         List<TargetingPredicate> targetingPredicates = targetingGroup.getTargetingPredicates();
         boolean allTruePredicates = true;
         /***************************************************************************************************************
-         * This is the Section we need to change
+         * INSERT THREAD POOL HERE
          *
-         * predicate.evaluate(requestContext)
-         * if is false change all true predicates to false
+         *
+         *
          **************************************************************************************************************/
+
+
         allTruePredicates = targetingPredicates.stream()
                 .allMatch(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue());
 
