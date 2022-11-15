@@ -4,7 +4,9 @@ import com.amazon.ata.advertising.service.model.RequestContext;
 import com.amazon.ata.advertising.service.targeting.predicate.TargetingPredicate;
 import com.amazon.ata.advertising.service.targeting.predicate.TargetingPredicateResult;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,6 +26,7 @@ public class TargetingEvaluator {
         this.requestContext = requestContext;
     }
 
+
     /**
      * Evaluate a TargetingGroup to determine if all of its TargetingPredicates are TRUE or not for the given
      * RequestContext.
@@ -39,10 +42,32 @@ public class TargetingEvaluator {
          *
          *
          **************************************************************************************************************/
+        ExecutorService executor = Executors.newCachedThreadPool();
+        List<Future<Boolean>> networkCallResults = new ArrayList<Future<Boolean>>();
 
 
-        allTruePredicates = targetingPredicates.stream()
-                .allMatch(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue());
+        networkCallResults.add(
+        executor.submit(() -> targetingPredicates.stream()
+                        .allMatch(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue()))
+        );
+
+        executor.shutdown();
+        for (Future<Boolean> result : networkCallResults){
+            try {
+                if (!result.get()) {
+                    allTruePredicates = false;
+                }
+            } catch(InterruptedException | ExecutionException e){
+                e.printStackTrace();
+            }
+
+
+        }
+//                   allTruePredicates = targetingPredicates.stream()
+//                    .allMatch(targetingPredicate -> targetingPredicate.evaluate(requestContext).isTrue());
+
+
+
 
 
 // OUTDATED
